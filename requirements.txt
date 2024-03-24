@@ -1,4 +1,4 @@
-requests
 playwright
+requests
 selenium
 yt_dlp
