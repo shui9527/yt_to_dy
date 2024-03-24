@@ -1,0 +1,4 @@
+requests
+playwright
+selenium
+yt_dlp
