@@ -5,14 +5,12 @@
 # @Project : pythonProject
 
 import configparser
-import json
 import time
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
-import data_collation
-import ytdown
+from ytdown import GetVideoInfo
 import get_cookies
 import pre_upload
 import asyncio
@@ -34,7 +32,13 @@ def crawler():
     for key, value in headers.items():
         chrome_options.add_argument(f'--header={key}: {value}')
     chrome_options.add_argument(f'--proxy-server={proxy}')
-    chrome_options.add_experimental_option('detach', True)
+
+    # 无界面模式
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--disable-gpu')
+
+    # 爬取窗口是否保持打开状态
+    # chrome_options.add_experimental_option('detach', True)
 
     browser = webdriver.Chrome(options=chrome_options)
     browser.get(url)
@@ -53,31 +57,14 @@ def crawler():
         browser.execute_script("document.documentElement.scrollTop=100000")
         time.sleep(2)
 
-    time.sleep(2)
+    # 获取视频地址
+    print('开始获取视频地址')
+    videos_url_list = browser.find_elements(By.XPATH, '//*[@id="video-title"]')
+    for video_urls in videos_url_list:
+        video_url = video_urls.get_attribute('href')
+        if video_url != None:
+            return video_url
 
-    # 获取视频标题和地址
-    video_dict = {}
-
-    videos_title_list = browser.find_elements(By.XPATH, '//*[@id="video-title"]')
-    for video_title in videos_title_list:
-        titles = video_title.get_attribute('title')
-
-        hrefs = video_title.get_attribute('href')
-
-        video_dict[titles] = hrefs
-
-    # 去除字典中value为None的键值
-    new_video_dict = {key: value for key, value in video_dict.items() if value is not None}
-
-    print('已获取视频信息：')
-    for key in new_video_dict.keys():
-        print(key)
-
-    # 将数据保存到JSON文件
-    file_name = './temp/new_video_dict.json'
-
-    with open(file_name, 'w') as file:
-        json.dump(new_video_dict, file, indent=4)
 
 
 def delete_files_in_directory(directory):
@@ -92,14 +79,15 @@ def delete_files_in_directory(directory):
 
 
 def mode(value):
-
     if value == 1:
-        down_url = input('请输入需要下载的页面网址:')
-        ytdown.download_video(down_url)
+        download_url = input('请输入需要下载的页面网址:')
+        videos_get = GetVideoInfo()
+        videos_get.get_video_info(download_url)
     elif value == 2:
-        crawler()
-        data_collation.data_collation()
-        ytdown.get_url()
+        download_url = crawler()
+        print('正在爬取中....')
+        videos_get = GetVideoInfo()
+        videos_get.get_video_info(download_url)
     elif value == 3:
         get_cookies.main()
         print('抖音cookie更新完成')
@@ -114,7 +102,6 @@ def mode(value):
 
 
 async def preup():
-    # 在协程中调用另一个协程时，使用await关键字
     await pre_upload.pre_upload()
 
 
@@ -125,7 +112,11 @@ if __name__ == '__main__':
         config.read_file(f)
     mode_type = int(config.get('Crawlers', 'mode_type'))
     save_path = config.get('Crawlers', 'save_path')
+
     mode(mode_type)
+
     loop = asyncio.get_event_loop()
     loop.run_until_complete(preup())
+
+    # 上传完成后删除所有下载视频文件
     delete_files_in_directory(save_path)
