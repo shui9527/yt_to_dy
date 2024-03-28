@@ -1,7 +1,7 @@
 import configparser
 import asyncio
 from playwright.async_api import async_playwright
-import random
+
 
 async def upload_video(video_path, video_name, description, tags, storage_state, headless):
     platform = '抖音'
@@ -51,13 +51,13 @@ async def upload_video(video_path, video_name, description, tags, storage_state,
         css_selector = ".zone-container"
 
         if len(tags) > 5:
-            random_tags = random.sample(tags, 5)
-            for index, tag in enumerate(random_tags, 5):
+            tags = tags[0:5]
+            for index, tag in enumerate(tags, 5):
                 print("正在添加话题")
                 await page.type(css_selector, "#" + tag)
                 await page.press(css_selector, "Space")
         else:
-            for index, tag in enumerate(tags,start=1):
+            for index, tag in enumerate(tags, start=1):
                 print("正在添加话题")
                 await page.type(css_selector, "#" + tag)
                 await page.press(css_selector, "Space")
