@@ -96,6 +96,14 @@ def mode(value):
         print('“2”自动模式：以config.ini文件中的配置自动爬取')
         mode_code = int(input('请输入模式代码：'))
         mode(mode_code)
+    elif value == 4:
+        with open('./temp/news.txt', 'r', encoding='utf-8') as fp:
+            urls = fp.readlines()
+            for url in urls:
+                download_url = url.replace('\n', "")
+                videos_get = GetVideoInfo()
+                videos_get.get_video_info(download_url)
+
     else:
         print('**请选择正确的模式**')
         print('请检查config.ini配置文件')
